@@ -1,59 +1,87 @@
 # Jev-Me
 
-A grilling interview with Jev weighing in at every step: which questions
-earn a round, which recommendation leads, whether each answer settles its
-branch, and when the session ends.
+Jev-Me is an agent skill. The skill runs an interview about a plan or a
+design. A second model named **Jev** scores each step. You type `/jev-me`
+to start. The agent does not start the skill by itself.
 
-For a person who wants more useful determinism in **planning and
-interviewing** when the interviewer is an overconfident, jagged LLM.
-Jev pins that interviewer. Not a general harness, not an autonomous
-planner, not an implementation license.
+The full rules are in [SKILL.md](SKILL.md).
 
-An agent skill. You invoke it by typing `/jev-me`; the agent never fires it
-on its own. The skill is [SKILL.md](SKILL.md).
+## What the skill does
 
-## How it runs
+The agent asks you the questions that change the plan. Jev scores:
 
-The numbered sections in `SKILL.md` are a loop, not a straight line.
+- which questions to ask now
+- which recommended answer to show
+- whether your answer is a decision
+- when the interview can stop
 
-1. **Open** — verifies a working Jev client, then seeds a design tree
-   (6–8 candidates across planning axes: objective, constraints,
-   alternatives, sequencing, irreversible calls, risks, reopen).
-2. **Weigh the pool** (one Jev call) — every candidate is judged for
-   load-bearing, independence, fact-vs-decision, and irreversibility;
-   each gets a rec pick. Code prunes strong-no branches, holds
-   dependents, looks up facts, ranks survivors by load-bearing (sticky
-   as a tiebreak only), and asks at most four.
-3. **Ask the round** — top-K in ❓/➡️ shape. Rec confidence and, when
-   the pick is split, the runner-up probabilities sit on the ➡️ line.
-4. **Weigh the answers** (one Jev call) — Score of decided-ness, Noul
-   for nodding-along, Choice for *which* settled call reopened. Mush
-   stays on the pool as pushback quoting the Score level. Settled
-   answers grow children from what the user named (at most two invented,
-   then re-weighed); the tree does not freeze at the seed.
-5. **Close** — per-prune "still material" Nouls, a diminishing-returns
-   Score, and a Choice that names the assumption to reopen. Ends on
-   confirmed shared understanding, never on an empty pool alone, and
-   never as authorization to implement.
+The agent uses those scores. The agent does not guess the next step in
+prose.
 
-Noul 0.5 means I don't know, not medium. Uncertain bands are kept, not
-auto-pruned. "Looks good" is nods-along, not a decision. Looked-up facts
-are not reopen targets.
+## Who it is for
 
-## Requires
+The skill is for a **person**. You want a plan from an interview. You
+want results that you can predict. The interview agent is often too sure
+and not reliable. Jev limits that agent.
 
-- A working Jev client (`TYPESAFE_API_KEY` in the environment). The skill
-  verifies it before starting and never handles the key itself.
-- The [`typesafe-ai`](https://github.com/typesafe-ai/skills) skill for Jev
-  API mechanics.
+The skill is not a general tool for all LLM work. The skill is not an
+autonomous planner. A confirmed log is not a license to implement.
 
-## Grounding
+## Quick start
 
-Interview mechanics adapted from `grilling` / `grill-me`
-([mattpocock/skills](https://github.com/mattpocock/skills)). Design debts:
-OntoAgent (what-to-ask decoupled from how-to-ask), the Mediating
-Assessments Protocol (independent judgments, global evaluation delayed to
-the close), cognitive forcing functions (uncertainty display plus selective
-forcing), and Bayesian adaptive querying (weigh a large pool, ask a short
-round). Pairs with [jev-decisions](https://github.com/jon-devlapaz/jev-decisions)
-for architecture calls that want the full decision engine.
+1. Set `TYPESAFE_API_KEY` in the environment. Do not paste the key into
+   chat.
+2. Install the [`typesafe-ai`](https://github.com/typesafe-ai/skills)
+   skill for the Jev client.
+3. Type `/jev-me`.
+4. Answer the numbered questions. Do not reply only with "looks good".
+5. Stop when you confirm shared understanding.
+
+## How it works
+
+The steps in `SKILL.md` are a **loop**, not a line.
+
+1. **Open.** The agent tests Jev with one small question. Then the agent
+   writes 6–8 candidate questions about the plan.
+2. **Weigh the pool.** One Jev call scores each candidate. The agent
+   removes weak questions, holds dependent questions, and finds facts.
+   The agent asks at most **four** questions.
+3. **Ask the round.** Each question shows Jev's recommended answer and
+   the confidence. If confidence is low, the agent shows the split. The
+   agent does not give a winner.
+4. **Weigh the answers.** One Jev call scores each answer. Agreement
+   with no reason is not a decision. The question stays open.
+5. **Close.** Jev checks silent assumptions. Then the agent writes a
+   decision log. You confirm. That confirm does not start
+   implementation.
+
+If you stop in the middle, the agent stops. Open questions stay open.
+
+## Words this skill uses
+
+| Word | Meaning |
+| --- | --- |
+| **Jev** | The TypeSafe System One model. It returns typed scores. |
+| **Pool** | The questions that you can ask now. |
+| **Round** | At most four questions from the pool. |
+| **Noul** | A yes/no probability from 0 to 1. A value near 0.5 means "I do not know". It does not mean "medium". |
+| **Score** | A position on named levels. Use Score when the answer is a range, not yes/no. |
+| **Fact** | Something the agent can find in files or tools. Do not ask the user. |
+| **Decision** | Something two persons can still disagree about. Ask the user. |
+
+## Requirements
+
+- A Jev client. Put `TYPESAFE_API_KEY` in the environment. The skill
+  checks the client. The skill does not handle the key.
+- The [`typesafe-ai`](https://github.com/typesafe-ai/skills) skill for
+  Jev API mechanics.
+
+## Related work
+
+Interview steps come from `grilling` / `grill-me`
+([mattpocock/skills](https://github.com/mattpocock/skills)).
+
+Jev mechanics come from the `typesafe-ai` skill and TypeSafe docs.
+
+For architecture work that needs a full decision engine, use
+[jev-decisions](https://github.com/jon-devlapaz/jev-decisions).

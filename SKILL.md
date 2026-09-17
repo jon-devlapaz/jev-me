@@ -1,35 +1,36 @@
 ---
 name: jev-me
 description: >
-  Grill the user on a plan or design with Jev weighing every frontier
-  question, recommendation, answer, and close. Use when the user types
-  /jev-me.
+  Interviews the user about a plan or a design. Jev scores each
+  question, each recommended answer, each user answer, and the close.
+  Use when the user types /jev-me or asks to grill a plan.
 disable-model-invocation: true
 ---
 
 # Jev-Me
 
-A grilling interview with Jev on the control points: which questions
-earn a round, which recommendation leads, whether an answer settles its
-branch, and when the session ends. You type `/jev-me` to start; the
-agent never fires this on its own.
+This skill runs an interview about a plan or a design. Jev scores each
+control point: which questions to ask, which recommended answer to show,
+whether an answer is a decision, and when to stop. You type `/jev-me`
+to start. The agent does not start the skill by itself.
 
-The user is a **person**. The job is **useful determinism in planning
-and interviewing**, not a general LLM harness and not an autonomous
-planner. The unreliable party is the interviewing LLM: overconfident
-and jagged. Jev pins that interviewer — calibrated typed judgments the
-LLM is not allowed to skip, round, or overwrite with vibes.
+The user is a **person**. The job is a plan from an interview with
+results that you can predict. The skill is not a general LLM tool. The
+skill is not an autonomous planner. The interview agent is often too
+sure and not reliable. Jev limits that agent with typed scores. The
+agent must use those scores. The agent must not skip a Jev call. A
+confirmed log is not a license to implement.
 
-**Requires:** a working Jev client. For SDK setup, auth, and
-question-shaping, use the `typesafe-ai` skill. Keep `TYPESAFE_API_KEY`
-in the environment; never put it in state, questions, or the log.
+**Requires:** a Jev client. For SDK setup and question shape, use the
+`typesafe-ai` skill. Keep `TYPESAFE_API_KEY` in the environment. Do not
+put the key in state, questions, or the log.
 
-Jev returns typed answers. Compose them in this skill's rules — do not
-ask Jev "what should we do next" as one blob. A Noul near 0.5 is *I
-don't know*, not a medium amount of anything. Use Score when the answer
-is a position on named situations. Agent drafts questions and rec
-options; Jev judges; the user decides. Confirmation never authorizes
-implementation.
+Jev returns typed answers. Use the rules in this skill to combine them.
+Do not ask Jev "what must we do next" as one question. A Noul near 0.5
+means "I do not know". It does not mean "medium". Use Score when the
+answer is a position on named levels. The agent writes questions and
+recommended options. Jev scores. The user decides. Confirmation does
+not authorize implementation.
 
 ## Thresholds
 
