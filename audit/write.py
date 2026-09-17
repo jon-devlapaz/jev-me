@@ -270,6 +270,76 @@ def render_log(session_id: str) -> str:
     return "\n".join(lines).rstrip() + "\n"
 
 
+def render_review(session_id: str | None) -> str:
+    with connect() as conn:
+        if session_id:
+            session = conn.execute(
+                "SELECT * FROM sessions WHERE id = ?", (session_id,)
+            ).fetchone()
+            if session is None:
+                raise FileNotFoundError(f"unknown session {session_id}")
+            sessions = [session]
+        else:
+            sessions = conn.execute(
+                "SELECT * FROM sessions WHERE status = 'closed' ORDER BY started_at"
+            ).fetchall()
+        if not sessions:
+            return "No closed sessions.\n"
+        ids = [row["id"] for row in sessions]
+        placeholders = ",".join("?" * len(ids))
+        events = conn.execute(
+            "SELECT session_id, candidate_id, payload FROM events "
+            f"WHERE session_id IN ({placeholders}) AND kind = 'gate' ORDER BY session_id, id",
+            ids,
+        ).fetchall()
+
+    history: dict[tuple[str, str], list[str]] = {}
+    for row in events:
+        payload = json.loads(row["payload"])
+        if not isinstance(payload, dict):
+            continue
+        cid = row["candidate_id"] or _text(payload, "id")
+        gate = _text(payload, "gate").lower()
+        if not cid or not gate:
+            continue
+        history.setdefault((row["session_id"], cid), []).append(gate)
+
+    prune_n = settle_n = prune_back = settle_back = 0
+    for gates in history.values():
+        if "prune" in gates:
+            prune_n += 1
+            later = gates[gates.index("prune") + 1 :]
+            if "reopen" in later:
+                prune_back += 1
+        if "settle" in gates:
+            settle_n += 1
+            later = gates[gates.index("settle") + 1 :]
+            if "reopen" in later:
+                settle_back += 1
+
+    n_sessions = len(sessions)
+    lines = [
+        "# Review",
+        "",
+        f"{n_sessions} session(s) · {prune_n} pruned · {prune_back} brought back · "
+        f"{settle_n} settled · {settle_back} unlocked",
+        "",
+        "Prune reversals grade the 0.8 discard bar. Settle reversals grade the 0.8 lock bar.",
+        "",
+    ]
+    enough = n_sessions >= 3 or prune_n >= 10 or settle_n >= 10
+    if not enough:
+        lines.append("Too few closed sessions to move a bar. Do not edit the table.")
+    elif prune_back or settle_back:
+        lines.append(
+            "Reversals showed up. Tell the person. Do not edit the table unless they say so."
+        )
+    else:
+        lines.append("No reversals. Leave the table.")
+    lines.append("")
+    return "\n".join(lines)
+
+
 def _read_payload(raw: str) -> dict[str, Any]:
     data = json.loads(raw)
     if not isinstance(data, dict):
@@ -332,6 +402,9 @@ def main(argv: list[str] | None = None) -> int:
     list_p = sub.add_parser("list", help="List sessions")
     list_p.add_argument("--status", choices=STATUSES)
 
+    review_p = sub.add_parser("review", help="Grade prune and settle bars from closed sessions")
+    review_p.add_argument("--session", help="One session; default is all closed sessions")
+
     args = parser.parse_args(argv)
     try:
         if args.cmd == "start":
@@ -356,10 +429,13 @@ def main(argv: list[str] | None = None) -> int:
         if args.cmd == "list":
             _print_json(list_sessions(args.status))
             return 0
+        if args.cmd == "review":
+            sys.stdout.write(render_review(args.session))
+            return 0
         sys.stdout.write(render_log(args.session))
         return 0
-    except (ValueError, FileNotFoundError, json.JSONDecodeError, OSError) as exc:
-        _print_json({"error": str(exc)})
+    except (ValueError, FileNotFoundError, json.JSONDecodeError, OSError, sqlite3.Error) as exc:
+        _print_json({"error": str(exc), "continue": True})
         return 1
 
 

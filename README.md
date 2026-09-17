@@ -16,19 +16,10 @@ session is for.
    git clone https://github.com/jon-devlapaz/jev-me.git ~/.agents/skills/jev-me
    ```
 
-2. Install the [`typesafe-ai`](https://github.com/typesafe-ai/skills)
-   skill so the agent can call Jev:
-
-   ```
-   npx skills add typesafe-ai/skills --skill typesafe-ai
-   ```
-
-   Pick Cursor when prompted. Add `-g` to install it globally.
-
-3. Set `TYPESAFE_API_KEY` in the environment. Do not paste the key into
+2. Set `TYPESAFE_API_KEY` in the environment. Do not put the secret in
    chat. The agent also needs `python3` and `uv` on your `PATH`.
 
-4. In a **new** Cursor chat, type `/jev-me`. If it is not offered,
+3. In a **new** Cursor chat, type `/jev-me`. If it is not offered,
    start a new chat after the clone.
 
 The agent will not start this skill by itself. Cloning into
@@ -37,6 +28,8 @@ projects.
 
 ## How to answer
 
+- If you only typed `/jev-me`, name the plan in 2–5 sentences — the live
+  alternatives and what you're leaning toward.
 - Answer numbered questions in your own words. A reason beats a nod.
 - "Looks good" is not an answer. The session will push back.
 - "I don't know" is a real answer.
@@ -51,6 +44,7 @@ Interviews are stored in this skill folder, not in your project.
 ```
 python3 ~/.agents/skills/jev-me/audit/write.py list
 python3 ~/.agents/skills/jev-me/audit/write.py log --session <id>
+python3 ~/.agents/skills/jev-me/audit/write.py review
 ```
 
 The full rules the agent follows are in [SKILL.md](SKILL.md).

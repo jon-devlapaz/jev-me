@@ -8,3 +8,4 @@ node_modules/
 *.skill
 audit/jev-me.sqlite
 audit/jev-me.sqlite-*
+GATES.md
