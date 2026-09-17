@@ -272,13 +272,3 @@ If the user exits mid-session, `--to abandoned`. Unsettled stays
 unsettled. Do not write a log that treats nods as calls.
 
 **Done when:** the log is delivered and understanding is confirmed.
-
-## Sources
-
-Interview mechanics adapted from `grilling` / `grill-me`
-(mattpocock/skills). Jev mechanics: `typesafe-ai` skill and TypeSafe
-docs. Design debts: OntoAgent (what-to-ask decoupled from how-to-ask);
-Mediating Assessments Protocol (independent judgments, global evaluation
-delayed to the close); cognitive forcing functions (uncertainty display
-plus selective forcing); Bayesian adaptive querying (ask for expected
-information gain; cap the user round, weigh a larger pool).

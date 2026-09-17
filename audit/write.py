@@ -157,18 +157,17 @@ def _text(payload: dict[str, Any], *keys: str) -> str:
 def _item_line(item: dict[str, str]) -> str:
     title = item.get("title") or ""
     ident = item.get("id") or ""
-    if title and title != ident:
-        head = f"**{title}**"
-    elif title:
-        head = f"**{title}**"
-    elif ident:
-        head = ""
-    else:
-        head = "**Untitled**"
-    answer = item.get("answer") or item.get("text") or ""
+    body = item.get("answer") or item.get("text") or ""
     reason = item.get("reason") or ""
-    parts = [part for part in (head, answer) if part]
-    line = "- " + " ".join(parts) if parts else "- Untitled"
+    label = title if title and title != ident else ""
+    if not label and not body:
+        label = title or ident or "Untitled"
+    if label and body:
+        line = f"- **{label}** {body}"
+    elif label:
+        line = f"- **{label}**"
+    else:
+        line = f"- {body}"
     if reason:
         line += f" — {reason}"
     return line

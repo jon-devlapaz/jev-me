@@ -54,13 +54,3 @@ python3 ~/.agents/skills/jev-me/audit/write.py log --session <id>
 ```
 
 The full rules the agent follows are in [SKILL.md](SKILL.md).
-
-## Related work
-
-Interview steps come from `grilling` / `grill-me`
-([mattpocock/skills](https://github.com/mattpocock/skills)).
-
-Jev mechanics come from the `typesafe-ai` skill and TypeSafe docs.
-
-For architecture work that needs a full decision engine, use
-[jev-decisions](https://github.com/jon-devlapaz/jev-decisions).
