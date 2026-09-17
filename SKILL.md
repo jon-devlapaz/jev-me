@@ -3,62 +3,147 @@ name: jev-me
 description: >
   Interviews the user about a plan or a design. Jev scores each
   question, each recommended answer, each user answer, and the close.
+  Decisions are written to a sqlite audit in this skill folder.
   Use when the user types /jev-me or asks to grill a plan.
 disable-model-invocation: true
 ---
 
 # Jev-Me
 
-This skill runs an interview about a plan or a design. Jev scores each
-control point: which questions to ask, which recommended answer to show,
-whether an answer is a decision, and when to stop. You type `/jev-me`
-to start. The agent does not start the skill by itself.
+This skill runs an interview about a plan or a design. **Jev** scores
+each control point. You type `/jev-me` to start. The agent does not
+start the skill by itself.
 
 The user is a **person**. The job is a plan from an interview with
-results that you can predict. The skill is not a general LLM tool. The
-skill is not an autonomous planner. The interview agent is often too
-sure and not reliable. Jev limits that agent with typed scores. The
-agent must use those scores. The agent must not skip a Jev call. A
-confirmed log is not a license to implement.
+results that you can predict. A confirmed log is not a license to
+implement.
 
-**Requires:** a Jev client. For SDK setup and question shape, use the
-`typesafe-ai` skill. Keep `TYPESAFE_API_KEY` in the environment. Do not
-put the key in state, questions, or the log.
+**Requires:** `TYPESAFE_API_KEY` in the environment, and the
+`typesafe-ai` skill for how to call Jev. Do not put the key in state,
+questions, chat, or the audit. If auth fails, stop and tell the user
+to set `TYPESAFE_API_KEY` — never ask them to paste the key. If
+`typesafe-ai` is missing, stop and tell them to install it. Call Jev
+with `uv run --with typesafe-sdk python` so nothing is installed into
+this skill folder or the user's project.
 
-Jev returns typed answers. Use the rules in this skill to combine them.
-Do not ask Jev "what must we do next" as one question. A Noul near 0.5
-means "I do not know". It does not mean "medium". Use Score when the
-answer is a position on named levels. The agent writes questions and
-recommended options. Jev scores. The user decides. Confirmation does
-not authorize implementation.
+Three parts, one job:
+
+| Part | Owns |
+| --- | --- |
+| Jev | Typed scores |
+| This skill | Which questions to send Jev, and how to combine the scores |
+| `audit/jev-me.sqlite` | What happened, in order |
+
+You write the questions and recommended options. Jev scores. You apply
+the table below. The user decides. **Do not skip a Jev call. Do not skip
+an audit write. Do not invent a gate Jev did not return.**
+
+`WRITER` is `audit/write.py` next to this `SKILL.md`. Always call it
+with that absolute path. It finds the database from its own location.
+Do not `cd`. Do not copy the script. Do not write `event.json` or any
+other file into the user's project.
+
+## What the person sees
+
+The person never sees session ids, sqlite paths, Noul/Score names, raw
+JSON, or `write.py` output except the human log at close. Keep those
+for yourself.
+
+If they typed `/jev-me` with no subject, ask **What should we decide?**
+and wait. Do not probe Jev and do not seed questions until they name it.
+
+If `list --status open` shows an unfinished interview, do **not** start
+a second one. Ask, then wait:
+
+```
+You already have an unfinished interview: "<subject>". Resume that, or
+start a new one?
+```
+
+Except for a missing subject, an auth failure, or a resume prompt, do
+not send a user-visible message until the first numbered round is
+ready. Probe, start, and weigh silently.
+
+First user-visible turn after a named subject (one message, then wait):
+
+```
+I'll ask a few questions that change the plan. Answer in your own words —
+"looks good" is not an answer. When we stop, confirming the log is not
+a license to build.
+
+❓ **Q1** - ...
+```
+
+Pushback in ordinary words, with the numbers in parentheses:
+
+```
+That still leaves the call open (0.4, confidence 0.71): the answer
+agreed without adding a constraint. What would you actually lock in?
+```
+
+Do not quote Jev level names. Do not answer your own questions.
+"Looks good", "lgtm", "sounds right", or praise of the method is not
+an answer.
+
+## Audit
+
+```
+python3 /absolute/path/to/this-skill/audit/write.py start --subject "<subject>"
+python3 /absolute/path/to/this-skill/audit/write.py list --status open
+python3 /absolute/path/to/this-skill/audit/write.py event --session <id> --phase <phase> --kind <kind> [--candidate <qid>] --json '{...}'
+python3 /absolute/path/to/this-skill/audit/write.py status --session <id> --to closed
+python3 /absolute/path/to/this-skill/audit/write.py log --session <id>
+```
+
+`phase`: `open` `weigh_pool` `ask` `weigh_answers` `close` `confirm` `abandon`.
+`kind`: `jev_call` `gate` `utterance` `fact` `note`.
+
+Payloads the close log reads. `write.py` does not validate them; keep
+them in this shape so the log stays human.
+
+| kind | payload |
+| --- | --- |
+| `jev_call` | `{state, questions, answers, model}` — stored, not shown |
+| `gate` | `{id, gate, title, answer?, reason?, scores}` |
+| `utterance` | `{text}` |
+| `fact` | `{text}` plus optional `title` |
+| `note` | `{text}` or `{asked: ["q1"]}` |
+
+`gate` values: `prune` `hold` `fact` `survivor` `reframe` `settle`
+`pushback` `reopen`.
+
+After every Jev response, write `kind=jev_call`. After every gate, write
+`kind=gate`. After every user reply, write `kind=utterance`.
 
 ## Thresholds
 
 | Gate | Rule |
 | --- | --- |
-| Prune | load-bearing Noul `< 0.3` (keep listed, marked pruned) |
-| Uncertain band | Noul `0.3–0.7` — keep, flag, do not auto-act |
+| Prune | nearest `ask_value` level is 0 **and** confidence `≥ 0.6` |
+| Uncertain flag | `ask_value` confidence `< 0.6` — keep, flag, do not auto-prune |
 | Hold | independent Noul `< 0.4` |
 | Fact | is_fact Noul `> 0.6` — look it up, do not ask |
 | Rec lead | Choice confidence `≥ 0.6`; else show the top two probabilities, no winner |
 | Reopen | `reopened_call` is a **decision** id, not a looked-up fact, **and** Choice confidence `≥ 0.6` |
-| Settle | decided Score `≥ 1.5` **and** nods_along `< 0.6` |
+| Settle | decided Score `≥ 1.5` **and** decided confidence `≥ 0.6` **and** nods_along `< 0.6` |
 | Assumed reopen | still_material Noul `> 0.6` |
 | Deliver log | diminishing-returns Score `≥ 1.5` and no assumed reopen |
-| Round cap | ask at most **4** survivors, highest rank first |
-| Rank | `load_bearing` only. If two scores differ by `< 0.05`, prefer higher `irreversible` |
-| Irreversible flag | show on the question when irreversible Noul `> 0.6`; never mix into rank |
+| Round cap | ask at most **4** survivors, highest `ask_value.score` first |
+| Rank | `ask_value.score`. If two scores differ by `< 0.15`, prefer higher `irreversible` |
+| Irreversible flag | show on the question when irreversible Noul `> 0.6`; never mix into the score |
 
-Unsettled answers, pushbacks, and reframes stay on the pool. Close only
-when nothing askable remains.
+A Noul near 0.5 means "I do not know". It is not "medium". Rank is a
+Score. Uncertain on a Score is low confidence, not a mid score.
+
+Jev request shapes: [reference.md](reference.md).
 
 ## Control flow
 
 ```
-0 Open
+0 Open (probe Jev; start session)
 loop:
   1 Weigh the pool (one Jev call)
-  if no askable survivors and nothing unsettled → 4
+  if nothing askable → 4
   2 Ask the top-K round; wait
   3 Weigh answers (one Jev call); grow children; recompute pool
 4 Close (one Jev call); may reopen into the loop
@@ -66,9 +151,16 @@ loop:
 
 ## 0. Open
 
-Probe the client with one trivial Noul over a sentence of the subject.
-If auth fails, stop and tell the user to set `TYPESAFE_API_KEY` — never
-ask them to paste the key.
+Probe Jev with one trivial Noul over a sentence of the subject. If auth
+fails, stop.
+
+```
+python3 /absolute/path/to/this-skill/audit/write.py list --status open
+python3 /absolute/path/to/this-skill/audit/write.py start --subject "<subject>"
+```
+
+Keep the `session_id` to yourself. Write the probe as `phase=open`
+`kind=jev_call`.
 
 Frame the subject as a **design tree**. Seed **6–8** candidate questions
 that span planning axes, not one pocket: objective, constraints,
@@ -84,64 +176,20 @@ candidates.
 
 The **pool** is every decision whose prerequisites are already settled.
 Draft 2–4 rec options per question, always including a `neither` /
-reframe option. Fan out every judgment below in **one** call. Point
-instructions at backticked paths. Consume only what code needs.
+reframe option. Fan out every judgment in **one** call. Point
+instructions at backticked paths. Consume only what the table needs.
 
-```json
-{
-  "state": {
-    "subject": "Migrate checkout sessions to Redis",
-    "facts": ["Render already hosts the app"],
-    "settled": ["Stays on Render", "Budget $100/mo"],
-    "candidates": [{"id": "q1", "text": "Sync or async session writes?"}],
-    "rec_candidates": {
-      "q1": ["Sync: simpler crash story", "Async: protects p99"]
-    }
-  },
-  "questions": {
-    "q1_load_bearing": {
-      "type": "noul",
-      "instructions": "Does the answer to `candidates[0]` change what gets built, sequenced, or ruled out for `subject`, given `settled`?",
-      "criteria": {
-        "true": "Changing this answer changes the outcome or kills a live path",
-        "false": "Local, reversible, or already implied by `settled`"
-      }
-    },
-    "q1_independent": {
-      "type": "noul",
-      "instructions": "Can `candidates[0]` be answered honestly without knowing the other open candidates?"
-    },
-    "q1_is_fact": {
-      "type": "noul",
-      "instructions": "Can filesystem, repo, docs, or a lookup settle `candidates[0]` without a preference?"
-    },
-    "q1_irreversible": {
-      "type": "noul",
-      "instructions": "Would answering `candidates[0]` now lock out a live alternative that is expensive to restore?"
-    },
-    "q1_rec_pick": {
-      "type": "choice",
-      "instructions": "Given `subject` and `settled`, which recommendation in `rec_candidates.q1` leads best?",
-      "criteria": {
-        "sync": "Sync: simpler crash story",
-        "async": "Async: protects p99",
-        "neither": "Neither fits; the question needs reframing"
-      }
-    }
-  }
-}
-```
+Per candidate: `ask_value` Score, `independent` Noul, `is_fact` Noul,
+`irreversible` Noul, `rec_pick` Choice. Then:
 
-Then in code, per candidate:
-
-1. `is_fact > 0.6` → look it up or dispatch a subagent; put the result in
-   `facts`, tell the user, do not ask. Facts never become reopen targets.
+1. `is_fact > 0.6` → look it up; write `kind=fact`; tell the user; do not
+   ask. Facts never become reopen targets.
 2. independent `< 0.4` → hold for a later round.
-3. load-bearing `< 0.3` → prune (stay listed).
-4. `rec_pick == neither` → reframe the question; re-weigh next loop, do
-   not ask this wording.
-5. Else it is a survivor. Rank it. Load-bearing in the uncertain band
-   stays, flagged.
+3. nearest `ask_value` level 0 and confidence `≥ 0.6` → prune (stay listed).
+4. `rec_pick == neither` → reframe; re-weigh next loop; do not ask this
+   wording.
+5. Else it is a survivor. Rank by `ask_value.score`. Flag uncertain and
+   irreversible. Write one `kind=gate` per candidate.
 
 Read `choice`, `confidence`, **and** `probabilities` on every rec.
 A `neither` pick is a rewrite, not a skip of the branch.
@@ -153,7 +201,8 @@ the pool has nothing askable.
 
 Ask at most 4 survivors. Number them. Put Jev's rec on the ➡️ line.
 Below 0.6 confidence, do not pretend there is a winner. Flag
-irreversible Noul `> 0.6` on the question, not in the rank.
+irreversible Noul `> 0.6` on the question, not in the rank. Write
+`phase=ask` `kind=note` with the question ids asked.
 
 ```
 ❓ **Q1** - **<title>**: <body, including choices>
@@ -162,114 +211,64 @@ irreversible Noul `> 0.6` on the question, not in the rank.
 
 ---
 
-❓ **Q2** - **<title>**: <body, including choices>
+❓ **Q2** - **<title>**: <body, including choices> *(hard to undo)*
 
 ➡️ uncertain: <A> 0.52 / <B> 0.45 — flagged, pick is not a lead
 ```
-
-Answer none of your own questions. Wait for answers to the numbered
-questions. "Looks good", "lgtm", "sounds right", or praise of the
-method is not an answer.
 
 **Done when:** the round is asked in shape and every answer is heard.
 
 ## 3. Weigh the answers (one Jev call)
 
-Before the tree updates:
+Write each reply as `kind=utterance`. A single utterance that agrees
+with the round without restating each call ("looks good") is
+nods-along for **every** question in that round. Weigh it; do not
+settle any of them.
 
-```json
-{
-  "state": {
-    "subject": "Migrate checkout sessions to Redis",
-    "facts": ["Render already hosts the app"],
-    "settled": ["Stays on Render"],
-    "question": {"id": "q1", "text": "Sync or async session writes?"},
-    "rec": {"pick": "sync", "confidence": 0.82},
-    "answer": "Async. p99 matters more than crash story.",
-    "settled_ids": ["hosting"]
-  },
-  "questions": {
-    "q1_decided": {
-      "type": "score",
-      "instructions": "How settled is `answer` as a decision on `question`, given `settled`?",
-      "criteria": [
-        "Vague, hedged, or nodded along with `rec` without adding a constraint",
-        "Answered with a reservation a stranger could still misread",
-        "Settled; a stranger could defend this call from the log alone"
-      ]
-    },
-    "q1_nods_along": {
-      "type": "noul",
-      "instructions": "Does `answer` merely agree with `rec` without adding a constraint or a reason?"
-    },
-    "q1_reopened_call": {
-      "type": "choice",
-      "instructions": "Which already-settled call does `answer` reopen?",
-      "criteria": {
-        "hosting": "Stays on Render",
-        "none": "No earlier settled call is reopened"
-      }
-    }
-  }
-}
-```
+Fan out one triplet per answer: `decided` Score, `nods_along` Noul,
+`reopened_call` Choice over settled decision ids plus `none`.
 
-Fan out one triplet per answer in the same call. `reopened_call`
-criteria are **settled decision ids** plus `none` — never `facts`.
-
-A single utterance that agrees with the round without restating each
-call ("looks good") is nods-along for **every** question in that round.
-Weigh it; do not settle any of them.
-
-- Decided Score `< 1.5` **or** nods_along `> 0.6` → pushback, quote the
-  **level** and confidence, keep it on the pool: "Jev places that at
-  nodded along (0.1, confidence 0.9) — what would make it defensible to
-  a stranger?"
+- Decided Score `< 1.5` **or** decided confidence `< 0.6` **or**
+  nods_along `> 0.6` → pushback in ordinary words, keep it on the pool.
+  Write `gate=pushback` with `reason` set to why it did not settle.
 - `reopened_call` is a decision id **and** that Choice confidence `≥ 0.6`
   → that settled branch returns to the pool. A hit on a fact, or
   confidence `< 0.6`, is not a reopen.
 - Otherwise settle, unblock what hung off it, and grow the tree: extract
   branches the **answer already named**, then invent **at most 2** extra
   candidates. Nothing newly grown is asked until it survives the next
-  weigh. Do not freeze the tree at the Open seed; do not let the
-  interviewing LLM smuggle unweighed questions into the round.
+  weigh. Do not freeze the tree at the Open seed; do not smuggle
+  unweighed questions into the round.
 
-**Done when:** every answer is scored, the pool reflects settled,
+Write one `kind=gate` per answer.
+
+**Done when:** every answer is scored and the pool reflects settled,
 pushed-back, reopened, and newly grown questions.
 
 ## 4. Close
 
 The session ends on shared understanding, not an empty pool. Enter close
-when nothing askable remains (no survivors, no unsettled, no unblocked
-held). One fan-out over the settled tree and the prune list:
+when nothing askable remains (no survivors, no unsettled). Held questions
+that never unblock do not block close. One fan-out over the settled tree
+and the prune list:
 
-- `still_material` — Noul **per pruned id**: "Is `pruned[i]` still a
-  material silent assumption given `settled`?"
-- `diminishing_returns` — Score: another round would reveal a material
-  call / remaining questions are polish / further rounds cost more
-  attention than they reveal.
-- `which_assumption` — Choice over pruned ids plus `none`.
+- `still_material` — Noul **per pruned id**
+- `diminishing_returns` — Score with three levels: another round would
+  reveal a material call / remaining questions are polish / further
+  rounds cost more attention than they reveal
+- `which_assumption` — Choice over pruned ids plus `none`
 
 Any `still_material > 0.6` reopens that branch into the loop. Else if
-diminishing-returns `≥ 1.5`, deliver the log. Else ask whether to
-continue or close.
+diminishing-returns `≥ 1.5`, deliver the log from
+`python3 /absolute/path/to/this-skill/audit/write.py log --session <id>`.
+Else ask whether to continue or close.
 
-The log: each settled call with rec pick, confidence, and probability
-split if it was close; each pushback and how it resolved; pruned
-branches with their load-bearing Nouls; what would reopen each call.
-End only when the user confirms shared understanding.
+Paste that log as-is. Then: **Does this match what you decided?
+Confirming is not a license to implement.** End only when they confirm,
+then `status --to closed` and `phase=confirm` `kind=note`. That confirm
+does not authorize implementation.
 
-If the user exits mid-session, stop. Unsettled stays unsettled. Do not
-write a log that treats nods as calls.
+If the user exits mid-session, `--to abandoned`. Unsettled stays
+unsettled. Do not write a log that treats nods as calls.
 
 **Done when:** the log is delivered and understanding is confirmed.
-
-## Sources
-
-Interview mechanics adapted from `grilling` / `grill-me`
-(mattpocock/skills). Jev mechanics: `typesafe-ai` skill and TypeSafe
-docs. Design debts: OntoAgent (what-to-ask decoupled from how-to-ask);
-Mediating Assessments Protocol (independent judgments, global evaluation
-delayed to the close); cognitive forcing functions (uncertainty display
-plus selective forcing); Bayesian adaptive querying (ask for expected
-information gain; cap the user round, weigh a larger pool).

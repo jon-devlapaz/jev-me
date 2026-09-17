@@ -2,6 +2,9 @@
 .env.local
 __pycache__/
 *.pyc
+.venv/
 node_modules/
 .DS_Store
 *.skill
+audit/jev-me.sqlite
+audit/jev-me.sqlite-*
