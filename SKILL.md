@@ -2,6 +2,7 @@
 name: jev-me
 description: Grill a plan as a design-tree interview, using Jev ad hoc for typed judgments.
 license: MIT
+version: 1.0.0
 disable-model-invocation: true
 ---
 
