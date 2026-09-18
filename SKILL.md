@@ -5,7 +5,7 @@ license: MIT
 disable-model-invocation: true
 ---
 
-Call the Skill tool with "grilling".
+Call the Skill tool with "grilling". If you cannot (no Skill tool, or grilling not installed), read [references/grilling.md](references/grilling.md) and follow that file.
 
 Jev is off until the user asks that turn (`jev Q2`, `jev this round`).
 
