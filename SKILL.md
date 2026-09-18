@@ -1,34 +1,46 @@
 ---
 name: jev-me
-description: Grill-me with Jev optional each turn.
+description: Grill a plan as a design-tree interview, using Jev ad hoc for typed judgments.
 license: MIT
 disable-model-invocation: true
 ---
 
-Call the Skill tool with "grilling". If you cannot (no Skill tool, or grilling not installed), read [references/grilling.md](references/grilling.md) and follow that file.
+# Jev-me
 
-Jev is off until the user asks that turn (`jev Q2`, `jev this round`).
+Every decision branches; the **frontier** is every decision whose
+prerequisites are already settled. Facts are yours: look them up. A
+running lookup only holds questions that depend on it. Decisions are
+the user's.
 
-When they ask, use the options already in that ❓ (agent-authored counts). If there are 2–8, add `neither` and POST once. If you do not already know the TypeSafe Choice primitive, read [references/typesafe.md](references/typesafe.md) for literacy, then follow this file for the call:
+## Workflow
 
-```
-POST https://api.typesafe.ai/v1/systemone
-Authorization: Bearer $TYPESAFE_API_KEY
-{
-  "model": "jev-latest",
-  "state": "<goal plus those option lines only>",
-  "questions": {
-    "pick": {
-      "type": "choice",
-      "instructions": "<that ❓>",
-      "criteria": { "<opt>": "<line>", "neither": "none of these" }
-    }
-  }
-}
-```
+1. Print the whole frontier in one round. You author every `❓` and
+   `➡️`. List live alternatives in the body only when they are already
+   named. A question that depends on another still open in this round
+   belongs to the next. Then wait.
 
-Put `neither` last in `criteria`. Annotate `choice` and `probabilities` beside that question's `➡️` in place — not as the `➡️`, not a new round. Keep grilling.
+   ```
+   ❓ **Q1** - **<title>**: <body>
 
-If there are not 2–8 options: skip Jev, say so, keep grilling.
+   ➡️ <your recommended answer>
 
-Missing `TYPESAFE_API_KEY`, 401, 422, 429, 529, other HTTP, or `neither`: say so, keep the round. Do not retry.
+   ---
+
+   ❓ **Q2** - **<title>**: <body>
+
+   ➡️ <your recommended answer>
+   ```
+
+2. Their answers settle decisions and grow the frontier. Print the next
+   round.
+
+3. Stop when the frontier is empty — nothing left silently assumed —
+   and they confirm. Then wait; they say when to implement.
+
+## Jev
+
+When a typed judgment would help, fetch
+https://raw.githubusercontent.com/typesafe-ai/skills/main/skills/typesafe-ai/SKILL.md
+before the first call and follow it. Keep grilling if the fetch fails
+or `TYPESAFE_API_KEY` is missing. You still author `➡️`; they still
+confirm.
