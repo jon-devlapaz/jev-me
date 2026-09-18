@@ -1,6 +1,7 @@
 ---
 name: jev-me
 description: Grill-me with Jev optional each turn.
+license: MIT
 disable-model-invocation: true
 ---
 
