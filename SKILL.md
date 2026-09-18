@@ -32,7 +32,7 @@ Jev is off until Jonathan asks that turn (`jev Q2`, `jev this round`).
 
 When he asks for a question that already has a closed 2–8 set he named or accepted:
 
-1. Read [references/typesafe-ai/SKILL.md](references/typesafe-ai/SKILL.md) and follow it for the call.
+1. TypeSafe primitive: read [references/typesafe.md](references/typesafe.md) and follow it for the call.
 2. One `POST https://api.typesafe.ai/v1/systemone` (`model: jev-latest`) with one `choice`. `neither` last. `state` is the goal plus those option lines only.
 3. Print `choice` and `probabilities` beside that question's `➡️`. Grilling still writes the `➡️`.
 
