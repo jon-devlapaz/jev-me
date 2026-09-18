@@ -1,7 +1,3 @@
-<!-- Vendored snapshot of the upstream TypeSafe skill doc (instrument manual).
-Source: https://raw.githubusercontent.com/typesafe-ai/skills/main/skills/typesafe-ai/SKILL.md
-Fetched: 2026-09-18. Refresh from upstream occasionally; do not edit below this line. -->
-
 ---
 name: typesafe-ai
 license: MIT
