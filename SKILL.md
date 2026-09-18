@@ -9,7 +9,7 @@ Call the Skill tool with "grilling".
 
 Jev is off until the user asks that turn (`jev Q2`, `jev this round`).
 
-When they ask, use the options already in that ❓ (agent-authored counts). If there are 2–8, add `neither` and POST once:
+When they ask, use the options already in that ❓ (agent-authored counts). If there are 2–8, add `neither` and POST once. If you do not already know the TypeSafe Choice primitive, read [references/typesafe.md](references/typesafe.md) for literacy, then follow this file for the call:
 
 ```
 POST https://api.typesafe.ai/v1/systemone
