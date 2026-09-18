@@ -28,18 +28,14 @@ Finding _facts_ is your job, never the user's. When a frontier question needs a 
 
 The session is done when the frontier is empty: every branch of the design tree visited, nothing left silently assumed. Do not act on it until the user confirms you have reached a shared understanding.
 
-Jev is off until Jonathan asks that turn (`jev Q2`, `jev this round`).
+Jev is off until the user asks that turn (`jev Q2`, `jev this round`).
 
-When he asks for a question that already has a closed 2–8 set he named or accepted:
+When the user asks for a question that already has a closed 2–8 set they named or accepted:
 
 1. TypeSafe primitive: read [references/typesafe.md](references/typesafe.md) and follow it for the call.
 2. One `POST https://api.typesafe.ai/v1/systemone` (`model: jev-latest`) with one `choice`. `neither` last. `state` is the goal plus those option lines only.
-3. Print `choice` and `probabilities` beside that question's `➡️`. Grilling still writes the `➡️`.
+3. Print `choice` and `probabilities` beside that question's `➡️`, not as the `➡️`.
 
-When he asks and there is no closed set: skip Jev, say so, keep grilling.
+When the user asks and there is no closed set: skip Jev, say so, keep grilling.
 
 Missing `TYPESAFE_API_KEY`, 422, 429, 529, or `neither`: say so, keep the round. Do not retry.
-
-Stay in grilling: one optional Choice beside `➡️` when asked. Jonathan settles. Chat is the record. Confirm ≠ implement.
-
-Leave out sqlite, gates, dummy menus, score averaging, and hill-climb. Do not grade Jonathan. Do not auto-call.
