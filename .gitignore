@@ -1,11 +1,2 @@
 .env
 .env.local
-__pycache__/
-*.pyc
-.venv/
-node_modules/
-.DS_Store
-*.skill
-scripts/jev-me.sqlite
-scripts/jev-me.sqlite-*
-GATES.md

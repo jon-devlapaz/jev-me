@@ -1,50 +1,22 @@
-# Jev-Me
+# jev-me
 
-Type `/jev-me` and answer a few questions about a plan. A second model
-named **Jev** scores which questions change the plan and whether your
-answers actually settle them. When you confirm the log, that is not a
-license to implement.
+This repository **replaces** the previous jev-me interview OS. Sqlite, `scripts/write.py`, gates, `session_kind`, and hill-climb leftovers are gone. Do not restore them.
 
-You do not need a finished plan to start. Producing one is what the
-session is for.
+`/jev-me` is [Grill-me](https://github.com/mattpocock/skills/blob/main/skills/productivity/grill-me/SKILL.md) with Jev optional each turn.
 
-## Install
+It starts a [grilling](https://github.com/mattpocock/skills/blob/main/skills/productivity/grilling/SKILL.md) session. Jev stays off until you ask that turn. If you ask and a closed 2–8 set is already on the table, one TypeSafe Choice is printed beside that question's `➡️` — not as the `➡️`.
 
-1. Clone this skill into your personal skills folder:
+The TypeSafe skill is an unmodified reference copy, not a rewrite: [`.agents/skills/jev-me/references/typesafe-ai/SKILL.md`](.agents/skills/jev-me/references/typesafe-ai/SKILL.md).
 
-   ```
-   git clone https://github.com/jon-devlapaz/jev-me.git ~/.agents/skills/jev-me
-   ```
+## Required
 
-2. Set `TYPESAFE_API_KEY` in the environment. Do not put the secret in
-   chat. The agent also needs `python3` and `uv` on your `PATH`.
+- `TYPESAFE_API_KEY` for Jev calls. Cloud secret or local `.env.local` — never chat, git, or Vercel. Without it, grilling still runs; Jev is skipped and said so.
 
-3. In a **new** Cursor chat, type `/jev-me`. If it is not offered,
-   start a new chat after the clone.
+## Invoke
 
-The agent will not start this skill by itself. Cloning into
-`~/.agents/skills/jev-me` is what makes `/jev-me` available from other
-projects.
+This skill never self-fires.
 
-## How to answer
+- Cursor / Claude Code: `/jev-me`
+- Any agent with this repo's skills loaded: use the `jev-me` skill
 
-- If you only typed `/jev-me`, say what you want to decide. A topic is
-  enough. You do not need alternatives or a lean to start.
-- Answer numbered questions in your own words. A reason beats a nod.
-- "Looks good" is not an answer. The session will push back.
-- "I don't know" is a real answer.
-- Push back on a question that is beneath the call you actually need.
-- Stop when the log matches what you decided. Confirming it does not
-  start implementation.
-
-## Inspect
-
-Interviews are stored in this skill folder, not in your project.
-
-```
-python3 ~/.agents/skills/jev-me/scripts/write.py list
-python3 ~/.agents/skills/jev-me/scripts/write.py log --session <id>
-python3 ~/.agents/skills/jev-me/scripts/write.py review
-```
-
-The full rules the agent follows are in [SKILL.md](SKILL.md).
+Ask for Jev on a turn with `jev Q2` or `jev this round`.
