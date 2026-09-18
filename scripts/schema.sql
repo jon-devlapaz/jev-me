@@ -1,4 +1,4 @@
--- Jev-Me audit. One file: audit/jev-me.sqlite
+-- Jev-Me audit. One file: scripts/jev-me.sqlite
 -- sessions = interviews
 -- events   = everything that happened, in order
 -- payload  = JSON. Never store TYPESAFE_API_KEY.

@@ -28,8 +28,8 @@ projects.
 
 ## How to answer
 
-- If you only typed `/jev-me`, name the plan in 2–5 sentences — the live
-  alternatives and what you're leaning toward.
+- If you only typed `/jev-me`, say what you want to decide. A topic is
+  enough. You do not need alternatives or a lean to start.
 - Answer numbered questions in your own words. A reason beats a nod.
 - "Looks good" is not an answer. The session will push back.
 - "I don't know" is a real answer.
@@ -42,9 +42,9 @@ projects.
 Interviews are stored in this skill folder, not in your project.
 
 ```
-python3 ~/.agents/skills/jev-me/audit/write.py list
-python3 ~/.agents/skills/jev-me/audit/write.py log --session <id>
-python3 ~/.agents/skills/jev-me/audit/write.py review
+python3 ~/.agents/skills/jev-me/scripts/write.py list
+python3 ~/.agents/skills/jev-me/scripts/write.py log --session <id>
+python3 ~/.agents/skills/jev-me/scripts/write.py review
 ```
 
 The full rules the agent follows are in [SKILL.md](SKILL.md).

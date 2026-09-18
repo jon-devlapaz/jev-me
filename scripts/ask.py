@@ -44,6 +44,8 @@ def redact(value: Any) -> Any:
 
 
 def to_question(spec: dict[str, Any]) -> Noul | Score | Choice:
+    if not isinstance(spec, dict):
+        raise ValueError("question must be an object")
     kind = spec.get("type")
     instructions = spec.get("instructions")
     criteria = spec.get("criteria")

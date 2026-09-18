@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Write rows to audit/jev-me.sqlite. Does not call Jev. Does not apply gates."""
+"""Write rows to scripts/jev-me.sqlite. Does not call Jev. Does not apply gates."""
 
 from __future__ import annotations
 
@@ -8,13 +8,14 @@ import json
 import sqlite3
 import sys
 import uuid
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-AUDIT_DIR = Path(__file__).resolve().parent
-DB_PATH = AUDIT_DIR / "jev-me.sqlite"
-SCHEMA_PATH = AUDIT_DIR / "schema.sql"
+SCRIPT_DIR = Path(__file__).resolve().parent
+DB_PATH = SCRIPT_DIR / "jev-me.sqlite"
+SCHEMA_PATH = SCRIPT_DIR / "schema.sql"
 SECRET_KEYS = frozenset(
     {
         "api_key",
@@ -43,11 +44,19 @@ LOG_SECTIONS = (
     ("pushback", "Pushed back"),
     ("fact", "Looked up"),
     ("prune", "Not asked"),
-    ("hold", "Waiting on another call"),
-    ("reframe", "Needs a better question"),
     ("survivor", "Still open"),
     ("reopen", "Would reopen"),
 )
+KNOWN_SECTIONS = {key for key, _ in LOG_SECTIONS}
+
+
+@dataclass
+class Item:
+    id: str
+    title: str = ""
+    body: str = ""
+    reason: str = ""
+    section: str = "survivor"
 
 
 def utc_now() -> str:
@@ -73,7 +82,7 @@ def redact(value: Any) -> Any:
 
 
 def connect() -> sqlite3.Connection:
-    AUDIT_DIR.mkdir(parents=True, exist_ok=True)
+    SCRIPT_DIR.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
@@ -105,6 +114,12 @@ def add_event(
         raise ValueError(f"phase must be one of {PHASES}")
     if kind not in KINDS:
         raise ValueError(f"kind must be one of {KINDS}")
+    if kind == "gate":
+        if not (candidate_id and candidate_id.strip()):
+            raise ValueError("gate requires --candidate")
+        gate_name = payload.get("gate")
+        if not isinstance(gate_name, str) or not gate_name.strip():
+            raise ValueError("gate payload requires gate")
     body = json.dumps(redact(payload), ensure_ascii=True, sort_keys=True)
     with connect() as conn:
         exists = conn.execute(
@@ -125,7 +140,7 @@ def set_status(session_id: str, status: str) -> None:
     closed_at = utc_now() if status in {"closed", "abandoned"} else None
     with connect() as conn:
         cur = conn.execute(
-            "UPDATE sessions SET status = ?, closed_at = COALESCE(?, closed_at) WHERE id = ?",
+            "UPDATE sessions SET status = ?, closed_at = ? WHERE id = ?",
             (status, closed_at, session_id),
         )
         if cur.rowcount == 0:
@@ -154,22 +169,15 @@ def _text(payload: dict[str, Any], *keys: str) -> str:
     return ""
 
 
-def _item_line(item: dict[str, str]) -> str:
-    title = item.get("title") or ""
-    ident = item.get("id") or ""
-    body = item.get("answer") or item.get("text") or ""
-    reason = item.get("reason") or ""
-    label = title if title and title != ident else ""
-    if not label and not body:
-        label = title or ident or "Untitled"
-    if label and body:
-        line = f"- **{label}** {body}"
-    elif label:
-        line = f"- **{label}**"
+def _item_line(item: Item) -> str:
+    if item.title:
+        line = f"- **{item.title}** {item.body}".rstrip() if item.body else f"- **{item.title}**"
+    elif item.body:
+        line = f"- {item.body}"
     else:
-        line = f"- {body}"
-    if reason:
-        line += f" — {reason}"
+        line = f"- **{item.id or 'Untitled'}**"
+    if item.reason:
+        line += f" — {item.reason}"
     return line
 
 
@@ -186,8 +194,8 @@ def render_log(session_id: str) -> str:
             (session_id,),
         ).fetchall()
 
-    by_id: dict[str, dict[str, str]] = {}
-    facts: list[dict[str, str]] = []
+    by_id: dict[str, Item] = {}
+    facts: list[Item] = []
     for row in rows:
         payload = json.loads(row["payload"])
         if not isinstance(payload, dict):
@@ -199,48 +207,41 @@ def render_log(session_id: str) -> str:
         if kind == "utterance":
             if not cid:
                 continue
-            item = by_id.setdefault(cid, {"id": cid, "gate": "survivor"})
-            item["answer"] = _text(payload, "text", "answer") or item.get("answer", "")
+            item = by_id.setdefault(cid, Item(id=cid))
+            item.body = _text(payload, "text", "answer") or item.body
             continue
         if kind == "fact":
-            fact_item = {
-                "id": cid,
-                "title": _text(payload, "title"),
-                "text": _text(payload, "text", "answer"),
-                "gate": "fact",
-            }
+            title = _text(payload, "title")
+            body = _text(payload, "text", "answer")
             if cid:
-                item = by_id.setdefault(cid, {"id": cid})
-                item["gate"] = "fact"
-                title = _text(payload, "title")
+                item = by_id.setdefault(cid, Item(id=cid))
+                item.section = "fact"
                 if title:
-                    item["title"] = title
-                item["text"] = fact_item["text"]
+                    item.title = title
+                item.body = body
             else:
-                facts.append(fact_item)
+                facts.append(Item(id="", title=title, body=body, section="fact"))
             continue
-        if kind != "gate":
+        if kind != "gate" or not cid:
             continue
-        if not cid:
+        item = by_id.setdefault(cid, Item(id=cid))
+        new_section = _text(payload, "gate").lower()
+        if not new_section:
             continue
-        item = by_id.setdefault(cid, {"id": cid})
-        new_gate = (
-            _text(payload, "gate") or item.get("gate") or "survivor"
-        ).lower()
-        if new_gate != item.get("gate"):
-            item.pop("reason", None)
-        item["gate"] = new_gate
+        if new_section not in KNOWN_SECTIONS:
+            new_section = "survivor"
+        if new_section != item.section:
+            item.reason = ""
+        item.section = new_section
         title = _text(payload, "title")
         if title:
-            item["title"] = title
-        elif "title" not in item:
-            item["title"] = ""
+            item.title = title
         answer = _text(payload, "answer", "text")
         if answer:
-            item["answer"] = answer
+            item.body = answer
         reason = _text(payload, "reason")
         if reason:
-            item["reason"] = reason
+            item.reason = reason
 
     lines = [
         f"# {session['subject']}",
@@ -248,10 +249,9 @@ def render_log(session_id: str) -> str:
         "Confirmation of this log is not a license to implement.",
         "",
     ]
-    grouped: dict[str, list[dict[str, str]]] = {key: [] for key, _ in LOG_SECTIONS}
+    grouped: dict[str, list[Item]] = {key: [] for key, _ in LOG_SECTIONS}
     for item in by_id.values():
-        gate = item.get("gate") or "survivor"
-        grouped.setdefault(gate, []).append(item)
+        grouped.setdefault(item.section, []).append(item)
     grouped["fact"].extend(facts)
 
     any_section = False
@@ -352,12 +352,9 @@ def _payload_from_args(json_text: str | None, payload_path: str | None) -> dict[
         raise ValueError("pass --json or --payload, not both")
     if json_text is not None:
         return _read_payload(json_text)
-    if payload_path is None:
-        raise ValueError("pass --json '{...}' or --payload FILE (use - for stdin)")
-    raw = sys.stdin.read() if payload_path == "-" else Path(payload_path).read_text(
-        encoding="utf-8"
-    )
-    return _read_payload(raw)
+    if payload_path is None or payload_path == "-":
+        return _read_payload(sys.stdin.read())
+    return _read_payload(Path(payload_path).read_text(encoding="utf-8"))
 
 
 def _print_json(value: Any) -> None:
@@ -375,7 +372,7 @@ def main(argv: list[str] | None = None) -> int:
     event_p = sub.add_parser(
         "event",
         help="Append one event",
-        epilog="Example: write.py event --session ID --phase ask --kind utterance --json '{\"text\":\"Stay on Render.\"}'",
+        epilog="Example: write.py event --session ID --phase ask --kind utterance <<'JSON'\\n{\"text\":\"We'll stay on Render.\"}\\nJSON",
     )
     event_p.add_argument("--session", required=True)
     event_p.add_argument("--phase", required=True, choices=PHASES)
@@ -385,11 +382,11 @@ def main(argv: list[str] | None = None) -> int:
         "--json",
         dest="json_text",
         metavar="JSON",
-        help="JSON object as a string",
+        help="JSON object as a string. Prefer stdin; quotes in answers will break this.",
     )
     event_p.add_argument(
         "--payload",
-        help="JSON file, or - for stdin. Do not write this file into the user's project.",
+        help="JSON file, or - for stdin. Default is stdin. Do not write this file into the user's project.",
     )
 
     status_p = sub.add_parser("status", help="Set session status")
@@ -432,10 +429,13 @@ def main(argv: list[str] | None = None) -> int:
         if args.cmd == "review":
             sys.stdout.write(render_review(args.session))
             return 0
-        sys.stdout.write(render_log(args.session))
-        return 0
+        if args.cmd == "log":
+            sys.stdout.write(render_log(args.session))
+            return 0
+        parser.error(f"unknown command {args.cmd}")
     except (ValueError, FileNotFoundError, json.JSONDecodeError, OSError, sqlite3.Error) as exc:
-        _print_json({"error": str(exc), "continue": True})
+        payload = {"error": str(exc)}
+        _print_json(payload)
         return 1
 
 
