@@ -2,7 +2,7 @@
 name: jev-me
 description: Grill a plan as a design-tree interview, using Jev ad hoc for typed judgments.
 license: MIT
-version: 1.1.3
+version: 1.1.5
 disable-model-invocation: true
 ---
 
@@ -24,8 +24,8 @@ non-interactive (CI, /loop, scheduled), or a pure info request. If
 they typed `/jev-me` on one of those anyway: one line that this is
 not a grill, then stop. Do not invent product forks.
 
-1. Print the whole frontier in one round. You author every `❓` and
-   `➡️`. Then wait.
+1. Print the whole frontier in one round. You author every `❓` /
+   `❔` and `➡️`. Then wait.
 
    A `❓` **depends** if flipping another still-open `❓` would change
    its answer — park it. Smell: compatibility still open, asking
@@ -42,29 +42,32 @@ not a grill, then stop. Do not invent product forks.
    image pipeline smuggled into a `➡️`.
 
    ```
-   ❓ **Q1** - **<title>**: <body>
+   ❔ **Q1** - **<title>**: <body>
 
    ➡️ <your recommended answer>
-   ⚡ Choice <key> p=<n> conf=<n>
+   ⚡️ <readable pick> · 68% probability · 81% confidence
 
    ---
 
    ❓ **Q2** - **<title>**: <body>
 
    ➡️ <your recommended answer>
-   ⚡ Noul p=<n>
+   ⚡️ <readable pick> · 68% probability · 36% confidence · uncertain
    ```
 
-   Print a `⚡` line under every Jev-informed `➡️` so they can
-   see it. Omit the line when Jev did not judge that arrow. `❓`
-   stays clean.
+   Print a `⚡️` line under every Jev-informed `➡️` so they can
+   see it. The glyph is the emoji `⚡️` (U+26A1 U+FE0F), not the
+   text-presentation bolt and not the word "lightning". Omit the
+   line when Jev did not judge that arrow. Question bodies stay
+   clean of numbers. `❔` is the same node as `❓` for skip,
+   depend, settle, and implement — only the mark changes.
 
 2. Their answers **settle** and grow the frontier. Print the next
    round.
 
    - Rec-accept ("go with `➡️`", "use your arrows", "you decide" on
      that `❓`) settles it as the `➡️`.
-   - Unanswered `❓` reprints; it does not vanish.
+   - Unanswered `❓` / `❔` reprints; it does not vanish.
    - An answer to a parked `❓` while its parent is open: park, don't
      settle.
    - Contradiction, or a parent settling against a child, retracts
@@ -87,13 +90,16 @@ not a grill, then stop. Do not invent product forks.
    One Noul per remaining candidate, one POST (see Jev).
    High yes → print that `❓`, do not confirm. Near 0.5 is not yes.
    If no label is a high yes → wait for confirm. One line they
-   can see: `⚡ empty-frontier:` then each candidate `p=<n>`
-   (not a `❓`). Confirm is
+   can see: `⚡️ empty frontier:` then each candidate as
+   `<readable label> · <n>% probability` (not a `❓`). Confirm is
    "looks good" / "that's the tree", not implement, not the Noul.
-   Then wait; they say when to implement ("implement", "apply it",
-   "build it"). After confirm, "ok what now?" means the tree is
-   confirmed and waiting to implement: do not rebuild, do not
-   re-grill.
+   On confirm: write `jev-tree.md` in the current workspace —
+   each settled title → its `➡️`, then the leftover percents.
+   One line with the path; do not reprint the tree. Do not write
+   `PLAN.md`. Then wait; they say when to implement ("implement",
+   "apply it", "build it"). After confirm, "ok what now?" means
+   the tree is confirmed and waiting to implement: do not rebuild,
+   do not re-grill; the file is the tree.
 
 ## Jev
 
@@ -113,10 +119,16 @@ Empty-frontier Nouls: state = original ask + settled nodes. Ask
 what the state says, not what you would conclude. Criteria: yes =
 still-silent product `❓`; no = already settled or implementation
 leftover. Not "are we done" / "is the session concluded". Do not
-Noul the smell labels.
+Noul the smell labels. Do not Noul settled picks.
 
-You still author `➡️`; they still confirm. `❓` stays clean. A
-Jev-informed `➡️` is followed by a `⚡` line they can see:
-`⚡ Choice <key> p=<n> conf=<n>`, `⚡ Score p=<n> conf=<n>`,
-or `⚡ Noul p=<n>`. Not tokens, model, or JSON. Hedge when
-confidence is low; a coin-flip `⚡` line is not a pick.
+You still author `➡️`; they still confirm. Question bodies stay
+clean of numbers. A Jev-informed `➡️` is followed by a `⚡️` line
+they can see:
+
+- Pick in ordinary words (spaces, not `snake_case`, not `Choice` /
+  `Noul` / `Score`).
+- `probability` and `confidence` spelled out, as whole percents
+  (Jev's 0–1 × 100). Noul has no confidence: probability only.
+- Hedge when confidence is low; a coin-flip `⚡️` is not a pick.
+  Those questions use red `❓` and end the `⚡️` line with
+  `uncertain`. Sure Jev uses white `❔`.
