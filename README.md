@@ -1,6 +1,6 @@
 # jev-me
 
-Grill-me with Jev on each turn.
+Grill a plan as a design-tree interview. Jev is ad hoc for typed judgments.
 
 ```bash
 npx skills add jon-devlapaz/jev-me
