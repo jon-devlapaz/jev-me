@@ -2,7 +2,7 @@
 name: jev-me
 description: Grill a plan as a design-tree interview, using Jev ad hoc for typed judgments.
 license: MIT
-version: 1.1.1
+version: 1.1.2
 disable-model-invocation: true
 ---
 
@@ -77,9 +77,11 @@ not a grill, then stop. Do not invent product forks.
    left — and they **confirm**. Before claiming empty: candidate
    labels only from the original ask and settled nodes — not a
    fresh brainstorm. Smell: session lifetime / 2FA / profile on a
-   named-closed stack. One Noul per candidate, one POST (see Jev).
+   named-closed stack — do not candidate them, do not Noul them.
+   One Noul per remaining candidate, one POST (see Jev).
    High yes → print that `❓`, do not confirm. Near 0.5 is not yes.
-   If no label is a high yes → wait for confirm. Confirm is
+   If no label is a high yes → wait for confirm. One line of those
+   Noul `p=` values (not a `❓`). Confirm is
    "looks good" / "that's the tree", not implement, not the Noul.
    Then wait; they say when to implement ("implement", "apply it",
    "build it"). After confirm, "ok what now?" means the tree is
@@ -103,8 +105,10 @@ before the first call and follow it.
 Empty-frontier Nouls: state = original ask + settled nodes. Ask
 what the state says, not what you would conclude. Criteria: yes =
 still-silent product `❓`; no = already settled or implementation
-leftover. Not "are we done" / "is the session concluded".
+leftover. Not "are we done" / "is the session concluded". Do not
+Noul the smell labels.
 
-You still author `➡️`; they still confirm. One line that a typed
-judgment informed the `➡️`; no internals in the `❓` / `➡️` blocks.
-Hedge when confidence is low; do not launder a coin-flip as a pick.
+You still author `➡️`; they still confirm. `❓` stays clean. A
+Jev-informed `➡️` ends with `p=<n>` and, for Choice/Score,
+`conf=<n>`. Not tokens, model, or JSON. Hedge when confidence
+is low; a coin-flip suffix is not a pick.
