@@ -2,7 +2,7 @@
 name: jev-me
 description: Grill a plan as a design-tree interview, using Jev ad hoc for typed judgments.
 license: MIT
-version: 1.1.0
+version: 1.1.1
 disable-model-invocation: true
 ---
 
@@ -74,9 +74,12 @@ not a grill, then stop. Do not invent product forks.
      order it.
 
 3. Stop when the frontier is empty — no unlocked product decision
-   left — and they **confirm**. Before claiming empty: one Noul
-   (see Jev) — anything still silently assumed? Yes → print the
-   missing `❓`, do not confirm. No → wait for confirm. Confirm is
+   left — and they **confirm**. Before claiming empty: candidate
+   labels only from the original ask and settled nodes — not a
+   fresh brainstorm. Smell: session lifetime / 2FA / profile on a
+   named-closed stack. One Noul per candidate, one POST (see Jev).
+   High yes → print that `❓`, do not confirm. Near 0.5 is not yes.
+   If no label is a high yes → wait for confirm. Confirm is
    "looks good" / "that's the tree", not implement, not the Noul.
    Then wait; they say when to implement ("implement", "apply it",
    "build it"). After confirm, "ok what now?" means the tree is
@@ -97,8 +100,10 @@ before the first call and follow it.
   installed typesafe-ai skill).
 - Fetch fails and no key: keep grilling.
 
-Empty-frontier Noul: state = original ask + settled nodes. Not "are
-we done" / "is the session concluded"; confirm stays their speech act.
+Empty-frontier Nouls: state = original ask + settled nodes. Ask
+what the state says, not what you would conclude. Criteria: yes =
+still-silent product `❓`; no = already settled or implementation
+leftover. Not "are we done" / "is the session concluded".
 
 You still author `➡️`; they still confirm. One line that a typed
 judgment informed the `➡️`; no internals in the `❓` / `➡️` blocks.
