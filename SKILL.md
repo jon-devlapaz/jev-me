@@ -27,6 +27,9 @@ not a grill, then stop. Do not invent product forks.
 1. Print the whole frontier in one round. You author every `❓` /
    `❔` and `➡️`. Then wait.
 
+   Before authoring a `➡️` that a typed judgment would help, follow
+   **Jev**.
+
    A `❓` **depends** if flipping another still-open `❓` would change
    its answer — park it. Smell: compatibility still open, asking
    cutover this round. Naming a topic, or "don't assume X", does not
@@ -60,7 +63,8 @@ not a grill, then stop. Do not invent product forks.
    text-presentation bolt and not the word "lightning". Omit the
    line when Jev did not judge that arrow. Question bodies stay
    clean of numbers. `❔` is the same node as `❓` for skip,
-   depend, settle, and implement — only the mark changes.
+   depend, settle, and implement — only the mark changes. Shape
+   the line from **Jev**.
 
 2. Their answers **settle** and grow the frontier. Print the next
    round.
@@ -80,33 +84,43 @@ not a grill, then stop. Do not invent product forks.
      batch-accepts live `➡️`s. If the frontier is then empty, that
      utterance is also implement. If not, print the remainder and do
      not implement. Do not implement while `❓` remain, even if they
-     order it.
+     order it. This is not the post-confirm build.
 
 3. Stop when the frontier is empty — no unlocked product decision
    left — and they **confirm**. Before claiming empty: candidate
    labels only from the original ask and settled nodes — not a
    fresh brainstorm. Smell: session lifetime / 2FA / profile on a
    named-closed stack — do not candidate them, do not Noul them.
-   One Noul per remaining candidate, one POST (see Jev).
-   High yes → print that `❓`, do not confirm. Near 0.5 is not yes.
-   If no label is a high yes → wait for confirm. One line they
-   can see: `⚡️ empty frontier:` then each candidate as
+   Noul as in **Jev**. `noul > 0.8` → print that `❓`, do not
+   confirm. If none, wait for confirm. One line they can see:
+   `⚡️ empty frontier:` then each candidate as
    `<readable label> · <n>% probability` (not a `❓`). Confirm is
    "looks good" / "that's the tree", not implement, not the Noul.
    On confirm: write `jev-tree.md` in the current workspace —
    each settled title → its `➡️`, then the leftover percents.
    One line with the path; do not reprint the tree. Do not write
    `PLAN.md`. Then wait; they say when to implement ("implement",
-   "apply it", "build it"). After confirm, "ok what now?" means
-   the tree is confirmed and waiting to implement: do not rebuild,
-   do not re-grill; the file is the tree.
+   "apply it", "build it") — that builds the confirmed tree. After
+   confirm, "ok what now?" means the tree is confirmed and waiting
+   to implement: do not rebuild, do not re-grill; the file is the
+   tree.
 
 ## Jev
 
-When a typed judgment would help (Choice / Noul / Score over named
-options or a described dimension — not a look-up-able fact), fetch
+When a typed judgment would help — not a look-up-able fact — fetch
 https://raw.githubusercontent.com/typesafe-ai/skills/main/skills/typesafe-ai/SKILL.md
 before the first call and follow it.
+
+Named product forks are Choice. A described dimension with ordered
+situation-levels is Score. A yes/no is Noul. Jev criteria may include
+`none of these`; that is not a new grill menu.
+
+Independent questions this round share one POST. A second request
+only if the next question's options or state need the first answer.
+
+State is named JSON: original ask, settled title → `➡️`. Send only
+what this round's questions need. Ask what the state says, not what
+you would conclude.
 
 - `TYPESAFE_API_KEY` missing: one line that Jev is skipped, tell them
   to `export TYPESAFE_API_KEY`, keep grilling. At claimed-empty:
@@ -115,20 +129,20 @@ before the first call and follow it.
   installed typesafe-ai skill).
 - Fetch fails and no key: keep grilling.
 
-Empty-frontier Nouls: state = original ask + settled nodes. Ask
-what the state says, not what you would conclude. Criteria: yes =
+Print `⚡️` from the answer, percents = 0–1 × 100, ordinary words
+(spaces, not `snake_case`, not `Choice` / `Noul` / `Score`):
+
+- Choice: readable `choice` · that option's probability · confidence
+- Noul: readable claim · probability only
+- Score: nearest level · confidence. Do not interpolate a magnitude.
+
+Low Choice confidence still prints the top option as `➡️`; mark `❓`
+and end `⚡️` with `uncertain`. Sure Choice/Score uses `❔`. A Noul
+near 0.5 is not a yes — do not treat it as Choice confidence.
+
+Empty-frontier Nouls: one per remaining candidate. Criteria: yes =
 still-silent product `❓`; no = already settled or implementation
 leftover. Not "are we done" / "is the session concluded". Do not
 Noul the smell labels. Do not Noul settled picks.
 
-You still author `➡️`; they still confirm. Question bodies stay
-clean of numbers. A Jev-informed `➡️` is followed by a `⚡️` line
-they can see:
-
-- Pick in ordinary words (spaces, not `snake_case`, not `Choice` /
-  `Noul` / `Score`).
-- `probability` and `confidence` spelled out, as whole percents
-  (Jev's 0–1 × 100). Noul has no confidence: probability only.
-- Hedge when confidence is low; a coin-flip `⚡️` is not a pick.
-  Those questions use red `❓` and end the `⚡️` line with
-  `uncertain`. Sure Jev uses white `❔`.
+You still author `➡️`; they still confirm.
